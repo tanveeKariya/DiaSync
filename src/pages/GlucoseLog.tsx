@@ -66,8 +66,6 @@ const GlucoseLog: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingReading, setIsAddingReading] = useState(false);
   const [editingReading, setEditingReading] = useState<GlucoseReading | null>(null);
-  const [isGeneratingTip, setIsGeneratingTip] = useState(false);
-  const [aiTip, setAiTip] = useState<string | null>(null);
   const chartRef = useRef<any>(null);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<GlucoseFormData>();
@@ -125,28 +123,7 @@ const GlucoseLog: React.FC = () => {
       console.error('Error saving glucose reading:', error);
     }
   };
-  const generateTip = async (latestReading: GlucoseReading) => {
-    setIsGeneratingTip(true);
-    setAiTip(null);
-
-    try {
-      // This is the call to your backend endpoint, which then internally uses Gemini
-      const response = await axios.post('/api/glucose/generate-tip', {
-        value: latestReading.value,
-        mealContext: latestReading.mealContext,
-        feeling: latestReading.feeling,
-        notes: latestReading.notes,
-        readingType: latestReading.readingType,
-        userTargetRange: user?.targetGlucoseRange || { min: 70, max: 180 }
-      });
-      setAiTip(response.data.tip);
-    } catch (error) {
-      console.error('Error generating AI tip:', error);
-      setAiTip('Could not generate a tip at this time. Please try again later.');
-    } finally {
-      setIsGeneratingTip(false);
-    }
-  };
+  
 
   const handleEdit = (reading: GlucoseReading) => {
     setEditingReading(reading);

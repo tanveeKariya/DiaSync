@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 // Route imports
 import authRoutes from './routes/authRoutes.js';
 import glucoseRoutes from './routes/glucoseRoutes.js';
@@ -26,12 +26,7 @@ app.use(cors({
     : 'http://localhost:5173',
   credentials: true
 }));
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.error('GEMINI_API_KEY is not set in environment variables!');
-  // Consider throwing an error or exiting if the key is critical
-}
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/glucose', glucoseRoutes);
@@ -55,4 +50,3 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/diasync')
   .catch((error) => {
     console.error('MongoDB connection error:', error);
   });
-module.exports = genAI;
