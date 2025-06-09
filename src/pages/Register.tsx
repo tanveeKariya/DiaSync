@@ -140,7 +140,7 @@ const Register: React.FC = () => {
 
         <div>
           <Input
-            label="Date of Diagnosis (Optional)"
+            label="Date of Diagnosis"
             type="date"
             fullWidth
             error={errors.dateOfDiagnosis?.message}
