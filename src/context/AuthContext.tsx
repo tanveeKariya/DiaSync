@@ -55,7 +55,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 // --- Configure Axios Base URL ---
 // It's generally better to set this once in an axios config file
 // or directly here if this is your primary axios usage.
-axios.defaults.baseURL = 'http://localhost:5000/api'; // Ensure this matches your backend API prefix (e.g., /api)
+axios.defaults.baseURL = 'https://diasync-ez2f.onrender.com/api'; // Ensure this matches your backend API prefix (e.g., /api)
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

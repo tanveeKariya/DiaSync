@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Adjust if your backend API is on a different path
+  baseURL: 'https://diasync-ez2f.onrender.com/api', // Adjust if your backend API is on a different path
   timeout: 10000,
 });
 
