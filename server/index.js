@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv'; // Don't forget to 'npm install dotenv' if you haven't
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Route imports
 import authRoutes from './routes/authRoutes.js';
@@ -12,26 +14,26 @@ import insulinRoutes from './routes/insulinRoutes.js';
 import journalRoutes from './routes/journalRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
-// --- IMPORTANT: Load environment variables ---
-// This path assumes your .env file is in the parent directory of 'server'
-// (i.e., in the root of your 'project' folder).
-// For Render, you will set these variables directly in the Render dashboard.
+// Path resolution for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load env vars
 dotenv.config({ path: '../.env' });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json()); // To parse JSON request bodies
-app.use(cookieParser()); // To parse cookies
+app.use(express.json());
+app.use(cookieParser());
 
-// --- CORS Configuration ---
-// Make sure FRONTEND_URL is set in your .env for local dev and in Render's environment variables for production
+// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? process.env.FRONTEND_URL // Will be your Netlify URL on Render
-    : 'http://localhost:5173', // For local frontend development
-  credentials: true // Important if you're sending cookies or authentication headers
+    ? process.env.FRONTEND_URL
+    : 'http://localhost:5173',
+  credentials: true
 }));
 
 // Routes
@@ -42,25 +44,30 @@ app.use('/api/insulin', insulinRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Root route - a simple check to see if the API is running
-app.get('/', (req, res) => {
-  res.send('DiaSync API is running');
-});
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
 
-// --- Connect to MongoDB ---
-// This will now ONLY use the MONGODB_URI environment variable.
-// Ensure MONGODB_URI is set correctly in your .env (locally) and Render dashboard (production).
+  // All unmatched routes go to index.html (for React Router)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('DiaSync API is running (Development)');
+  });
+}
+
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
-    // Start the server ONLY after a successful database connection
+    console.log('✅ Connected to MongoDB');
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server is running on port ${PORT}`);
     });
   })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-    // It's good practice to exit the process if the database connection fails
-    // as the application cannot function without it.
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
