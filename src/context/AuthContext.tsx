@@ -172,6 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (userData: any) => {
     setIsLoading(true);
     try {
+      console.log("Register Payload:", userData);
+
       const res = await axios.post('/auth/register', userData); // Endpoint is /api/auth/register
       const receivedToken = res.data.token;
       const newUser = res.data.user; // Backend sends the full new user object
