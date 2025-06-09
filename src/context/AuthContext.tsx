@@ -191,11 +191,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toggleTheme(false); // Default to light mode for new registrations
 
     } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  if (axios.isAxiosError(error) && error.response) {
+    console.error('Registration error:', error.response.data);
+  } else {
+    console.error('Registration failed:', error);
+  }
+  throw error;
+}
+
   };
 
   // --- Logout Function ---
