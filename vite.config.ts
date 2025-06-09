@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://diasync-ez2f.onrender.com',
+        target: 'http:localhost:5000', // replace with your backend URL
         changeOrigin: true,
         secure: true, // backend is HTTPS, so secure should be true
       },

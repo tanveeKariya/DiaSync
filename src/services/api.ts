@@ -2,86 +2,147 @@
 
 import axios from 'axios';
 
-// Create axios instance with base configuration
+// --- Interfaces for API Payloads (assuming these match your backend expectations) ---
+interface JournalEntryPayload {
+  date: string;
+  mood: string;
+  stressLevel?: number;
+  sleepHours?: number;
+  exerciseMinutes?: number;
+  exerciseType?: string;
+  content: string;
+  tags?: string[];
+}
+
+interface JournalEntryResponse extends JournalEntryPayload {
+  _id: string; // Backend usually returns an _id for created/updated entries
+  createdAt: string;
+  updatedAt: string;
+}
+
 const api = axios.create({
-  baseURL: 'https://diasync-ez2f.onrender.com/api', // Adjust if your backend API is on a different path
-  timeout: 10000,
+  // *** CRITICAL CORRECTION HERE ***
+  // Base URL should be ONLY the domain and port.
+  // The '/api' prefix will be added in individual API service calls below (e.g., '/api/journal').
+  baseURL:
+    process.env.NODE_ENV === 'production'
+      ? 'https://diasync-ez2f.onrender.com' // Your deployed backend domain (without /api)
+      : 'http://localhost:5000', // Local development domain (without /api)
+  timeout: 15000, // Increased timeout slightly for potentially slower network or server responses
 });
 
-// Add request interceptor to include auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error); // Important: Don't forget to reject on request error
-});
-
-// Add response interceptor to handle errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Check for 401 (Unauthorized) specifically
-    if (error.response?.status === 401) {
-      console.log('401 Unauthorized - Token expired or invalid. Redirecting to login...');
-      localStorage.removeItem('token'); // Clear invalid token
-      // You might want to use a state management solution or a dedicated
-      // redirect function to handle this gracefully in a React app.
-      // For now, window.location.href works.
-      window.location.href = '/login';
+// Request Interceptor: Adds the Authorization header with the user's token.
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    // For other errors, re-throw them so the component can handle them
+    return config;
+  },
+  (error) => {
+    // Handle request errors (e.g., network issues before sending)
     return Promise.reject(error);
   }
 );
 
+// Response Interceptor: Handles common API response errors.
+api.interceptors.response.use(
+  (response) => response, // If response is successful, just return it
+  (error) => {
+    // Centralized error handling for specific HTTP status codes
+    if (error.response) {
+      // Server responded with a status code outside the 2xx range
+      const { status } = error.response;
+
+      if (status === 401) {
+        console.warn('401 Unauthorized - Token expired or invalid. Redirecting to login...');
+        localStorage.removeItem('token'); // Clear the invalid token
+        window.location.assign('/login'); // Use window.location.assign for full page reload to clear app state
+      } else if (status === 403) {
+        console.error('403 Forbidden - User does not have permission.');
+      } else if (status === 404) {
+        console.error('404 Not Found - The requested resource could not be found.', error.response.config.url);
+      } else if (status >= 500) {
+        console.error('Server Error (5xx) - Something went wrong on the server.', error.response.data);
+      }
+    } else if (error.request) {
+      // Request was made but no response was received (e.g., network down, CORS issue)
+      console.error('No response received from server. Network error or CORS issue?', error);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error setting up API request:', error.message);
+    }
+
+    // Re-throw the error so that the calling component can also handle it if needed
+    return Promise.reject(error);
+  }
+);
+
+// --- Exported API Services ---
+// Each service call should now explicitly include the '/api/' prefix
+// because the baseURL no longer has it.
+
 // Glucose API
 export const glucoseApi = {
-  getReadings: (params?: any) => api.get('/glucose', { params }),
-  addReading: (data: any) => api.post('/glucose', data),
-  updateReading: (id: string, data: any) => api.put(`/glucose/${id}`, data),
-  deleteReading: (id: string) => api.delete(`/glucose/${id}`),
-  getStats: (params?: any) => api.get('/glucose/stats/overview', { params }),
+  getReadings: (params?: any) => api.get('/api/glucose', { params }),
+  addReading: (data: any) => api.post('/api/glucose', data),
+  updateReading: (id: string, data: any) => api.put(`/api/glucose/${id}`, data),
+  deleteReading: (id: string) => api.delete(`/api/glucose/${id}`),
+  getStats: (params?: any) => api.get('/api/glucose/stats/overview', { params }),
+};
+
+// Chatbot API
+export const chatbotApi = {
+  askBot: (message: string) => api.post('/api/chatbot', { message }),
 };
 
 // Meal API
 export const mealApi = {
-  getMeals: (params?: any) => api.get('/meals', { params }),
-  addMeal: (data: any) => api.post('/meals', data),
-  updateMeal: (id: string, data: any) => api.put(`/meals/${id}`, data),
-  deleteMeal: (id: string) => api.delete(`/meals/${id}`),
-  getSuggestions: (params?: any) => api.get('/meals/suggestions/smart', { params }),
+  getMeals: (params?: { page?: number; limit?: number; search?: string; mealType?: string; }) => api.get('/api/meals', { params }),
+  addMeal: (data: any) => api.post('/api/meals', data),
+  updateMeal: (id: string, data: any) => api.put(`/api/meals/${id}`, data),
+  deleteMeal: (id: string) => api.delete(`/api/meals/${id}`),
+  getSuggestions: (params?: any) => api.get('/api/meals/suggestions/smart', { params }),
 };
 
-// Insulin API (Corrected to match backend expected parameters)
+// Insulin API
 export const insulinApi = {
-  // getDoses now expects an object for params, which aligns with the backend
-  getDoses: (params?: { page?: number; limit?: number; search?: string; type?: string }) => api.get('/insulin', { params }),
-  addDose: (data: any) => api.post('/insulin', data),
-  updateDose: (id: string, data: any) => api.put(`/insulin/${id}`, data),
-  deleteDose: (id: string) => api.delete(`/insulin/${id}`),
-  calculateDose: (data: any) => api.post('/insulin/calculate', data), // Ensure this endpoint exists if used
+  getDoses: (params?: { page?: number; limit?: number; search?: string; type?: string }) => api.get('/api/insulin', { params }),
+  addDose: (data: any) => api.post('/api/insulin', data),
+  updateDose: (id: string, data: any) => api.put(`/api/insulin/${id}`, data),
+  deleteDose: (id: string) => api.delete(`/api/insulin/${id}`),
+  calculateDose: (data: any) => api.post('/api/insulin/calculate', data),
 };
 
-// Journal API
-export const journalApi = {
-  getEntries: (params?: any) => api.get('/journal', { params }),
-  addEntry: (data: any) => api.post('/journal', data),
-  updateEntry: (id: string, data: any) => api.put(`/journal/${id}`, data),
-  deleteEntry: (id: string) => api.delete(`/journal/${id}`),
-  getTrends: (params?: any) => api.get('/journal/stats/trends', { params }),
-};
+// Journal API - **Refined for Type Safety**
+// export const journalApi = {
+//   // *** CRITICAL CORRECTION HERE: Add /api/ prefix to match backend's /api/journal mount ***
+//   getEntries: (params?: any) => api.get('/api/journal', { params }),
+//   addEntry: (data: JournalEntryPayload) => api.post<JournalEntryResponse>('/api/journal', data),
+//   updateEntry: (id: string, data: JournalEntryPayload) => api.put<JournalEntryResponse>(`/api/journal/${id}`, data),
+//   deleteEntry: (id: string) => api.delete(`/api/journal/${id}`),
+//   getTrends: (params?: any) => api.get('/api/journal/stats/trends', { params }),
+// };
+// If you intended to use a backend model, this code should not be here in the frontend.
+// If you want to fetch readings for a user, use the API as below or remove this function.
 
+export const getReadingsForUser = async (userId: string, limit = 50) => {
+    try {
+        const response = await api.get('/api/glucose', { params: { user: userId, limit } });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching glucose readings for user:', error);
+        throw new Error('Failed to fetch glucose readings.');
+    }
+};
 // Reports API
 export const reportsApi = {
   getOverview: (params: { startDate: string; endDate: string }) => {
-    return api.get('/reports/overview', { params });
+    return api.get('/api/reports/overview', { params });
   },
   exportData: (format: 'pdf', params: { startDate: string; endDate: string }) => {
-    // IMPORTANT: Set responseType to 'blob' for file downloads
-    return api.get(`/reports/export/${format}`, {
+    return api.get(`/api/reports/export/${format}`, {
       params,
       responseType: 'blob', // This tells Axios to expect binary data
     });
@@ -90,9 +151,9 @@ export const reportsApi = {
 
 // Profile API
 export const profileApi = {
-  updateProfile: (data: any) => api.put('/auth/profile', data),
-  updatePassword: (data: any) => api.put('/auth/password', data),
-  updateSettings: (data: any) => api.put('/auth/settings', data),
+  updateProfile: (data: any) => api.put('/api/auth/profile', data),
+  updatePassword: (data: any) => api.put('/api/auth/password', data),
+  updateSettings: (data: any) => api.put('/api/auth/settings', data),
 };
 
 export default api;

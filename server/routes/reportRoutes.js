@@ -12,7 +12,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'; // For PDF generation
 import Glucose from '../models/GlucoseReading.js';
 import InsulinDose from '../models/InsulinDose.js';
 import Meal from '../models/Meal.js';
-import Journal from '../models/Journal.js';
+// import Journal from '../models/Journal.js';
 import User from '../models/User.js'; // Import User model to get target glucose range
 
 const router = express.Router();

@@ -26,7 +26,7 @@ const DashboardLayout: React.FC = () => {
     { path: '/glucose', icon: <DropletHalf size={20} />, label: 'Glucose' },
     { path: '/meals', icon: <Utensils size={20} />, label: 'Meals' },
     { path: '/insulin', icon: <Syringe size={20} />, label: 'Insulin' },
-    { path: '/journal', icon: <BookText size={20} />, label: 'Journal' },
+    // { path: '/journal', icon: <BookText size={20} />, label: 'Journal' },
     { path: '/reports', icon: <BarChart3 size={20} />, label: 'Reports' },
     { path: '/profile', icon: <User size={20} />, label: 'Profile' },
   ];

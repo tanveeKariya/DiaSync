@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from './components/ui/Toaster';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-
+import ChatBot from './pages/ChatBot';
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
 import AuthLayout from './layouts/AuthLayout';
@@ -13,7 +13,7 @@ import Dashboard from './pages/Dashboard';
 import GlucoseLog from './pages/GlucoseLog';
 import MealTracker from './pages/MealTracker';
 import InsulinDoses from './pages/InsulinDoses';
-import Journal from './pages/Journal';
+// import Journal from './pages/Journal';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -49,9 +49,10 @@ function App() {
               <Route path="/glucose" element={<GlucoseLog />} />
               <Route path="/meals" element={<MealTracker />} />
               <Route path="/insulin" element={<InsulinDoses />} />
-              <Route path="/journal" element={<Journal />} />
+              {/* <Route path="/journal" element={<Journal />} /> */}
               <Route path="/reports" element={<Reports />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/chat" element={<ChatBot />} />
             </Route>
             
             {/* 404 route */}

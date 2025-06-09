@@ -229,7 +229,7 @@ const LandingPage: React.FC = () => {
               <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mb-4">
                 <BookText className="text-indigo-600 dark:text-indigo-400" size={24} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Mental Health & Journaling</h3>
+              {/* <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Mental Health & Journaling</h3> */}
               <p className="text-gray-600 dark:text-gray-300">
                 Track your mood and well-being alongside physical metrics for a holistic health approach.
               </p>
