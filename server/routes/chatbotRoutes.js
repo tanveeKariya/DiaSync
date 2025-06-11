@@ -2,7 +2,7 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
-import { auth } from '../middleware/auth.js'; // Assuming you have an authentication middleware
+import { auth } from '../middleware/auth.js'; // Corrected import path for authentication middleware
 import GlucoseReading from '../models/GlucoseReading.js';
 import InsulinDose from '../models/InsulinDose.js';
 import { format } from 'date-fns';
