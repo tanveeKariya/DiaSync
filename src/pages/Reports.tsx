@@ -1,8 +1,8 @@
 // C:\Users\tanve\Downloads\project-bolt-sb1-onne9y7q\project\src\pages\Reports.tsx
 
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { BarChart3, Download, Calendar, Activity, Brain, FileText } from 'lucide-react';
+import { BarChart3, Download, Calendar, Activity, FileText } from 'lucide-react'; // Removed Brain icon as it was associated with wellness
 import { reportsApi } from '../services/api'; // Assuming you have reportsApi in api.ts
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -39,6 +39,7 @@ ChartJS.register(
   Filler // Register Filler for filled line charts
 );
 
+// --- UPDATED INTERFACE: Removed wellnessStats ---
 interface ReportData {
   glucoseStats: {
     average: number;
@@ -49,6 +50,8 @@ interface ReportData {
       value: number;
       timestamp: string;
     }>;
+    targetMin: number; // Added this from backend
+    targetMax: number; // Added this from backend
   };
   insulinStats: {
     totalDoses: number;
@@ -65,13 +68,15 @@ interface ReportData {
       timestamp: string;
     }>;
   };
-  wellnessStats: {
-    averageStress: number;
-    averageSleep: number;
-    moodDistribution: {
-      [key: string]: number;
-    };
-  };
+  user: { // Add user info if it's sent from the backend
+    name: string;
+    email: string;
+    diabetesType?: string;
+    targetGlucoseRange?: {
+      min: number;
+      max: number;
+    }
+  }
 }
 
 const Reports: React.FC = () => {
@@ -81,9 +86,9 @@ const Reports: React.FC = () => {
   });
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('glucose');
+  // Removed 'wellness' as an activeTab option
+  const [activeTab, setActiveTab] = useState<'glucose' | 'insulin' | 'meals'>('glucose');
 
-  // Using useCallback for fetchReportData to prevent unnecessary re-renders in useEffect
   const fetchReportData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -91,61 +96,52 @@ const Reports: React.FC = () => {
         startDate: startOfDay(new Date(dateRange.start)).toISOString(),
         endDate: endOfDay(new Date(dateRange.end)).toISOString()
       });
+      // Ensure the incoming data matches the ReportData interface
       setReportData(response.data);
     } catch (error) {
       console.error('Error fetching report data:', error);
-      // Optionally handle error state here
-      setReportData(null); // Clear data on error
-      alert('Failed to fetch report data. Please try again.'); // User-friendly message
+      setReportData(null);
+      alert('Failed to fetch report data. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [dateRange]); // Dependency array for useCallback
+  }, [dateRange]);
 
-  // Fetch report data whenever dateRange changes
   useEffect(() => {
     fetchReportData();
-  }, [dateRange, fetchReportData]); // Add fetchReportData to dependency array
+  }, [fetchReportData]); // Dependency array for useEffect
 
   const exportReport = async () => {
     try {
-      // Use reportsApi.exportData as defined in api.ts
-      // Ensure the backend endpoint expects query parameters for dates
       const response = await reportsApi.exportData('pdf', {
-        startDate: dateRange.start, // Send as yyyy-MM-dd
-        endDate: dateRange.end // Send as yyyy-MM-dd
+        startDate: dateRange.start,
+        endDate: dateRange.end
       });
 
-      // Check if the response is a valid Blob (file)
       if (response.data && response.data instanceof Blob) {
-        const url = window.URL.createObjectURL(response.data); // Use response.data directly
+        const url = window.URL.createObjectURL(response.data);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `diabetes-report-${dateRange.start}-to-${dateRange.end}.pdf`);
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.URL.revokeObjectURL(url); // Clean up the object URL
+        window.URL.revokeObjectURL(url);
       } else {
-        // This case indicates backend might not be sending a file/blob
         console.error('Unexpected response data for export:', response.data);
         alert('Failed to export report: Invalid file data received.');
       }
-    } catch (error: any) { // Catch more specific error types if possible
+    } catch (error: any) {
       console.error('Error exporting report:', error);
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error('Error response data:', error.response.data);
         console.error('Error response status:', error.response.status);
         console.error('Error response headers:', error.response.headers);
         alert(`Failed to export report: ${error.response.status} - ${error.response.data?.message || 'Server error'}`);
       } else if (error.request) {
-        // The request was made but no response was received
         console.error('No response received:', error.request);
         alert('Failed to export report: No response from server. Check your network.');
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error('Error setting up request:', error.message);
         alert('Failed to export report: Could not send request.');
       }
@@ -154,8 +150,6 @@ const Reports: React.FC = () => {
 
   // Helper to format date labels for charts
   const getChartLabels = (dataArray: Array<{ timestamp: string }>) => {
-    // This will likely show too much detail if timestamps are very close.
-    // Consider aggregating data by day or hour on the backend if needed for readability.
     return dataArray.map(item => format(new Date(item.timestamp), 'MMM d, h:mm a'));
   };
 
@@ -199,28 +193,7 @@ const Reports: React.FC = () => {
     }]
   };
 
-  const moodChartData = {
-    labels: Object.keys(reportData?.wellnessStats.moodDistribution || {}),
-    datasets: [{
-      label: 'Mood Distribution',
-      data: Object.values(reportData?.wellnessStats.moodDistribution || {}),
-      backgroundColor: [
-        CHART_COLORS.SUCCESS,
-        CHART_COLORS.PRIMARY,
-        CHART_COLORS.WARNING,
-        CHART_COLORS.ERROR,
-        CHART_COLORS.GRAY
-      ],
-      borderColor: [
-        CHART_COLORS.SUCCESS,
-        CHART_COLORS.PRIMARY,
-        CHART_COLORS.WARNING,
-        CHART_COLORS.ERROR,
-        CHART_COLORS.GRAY
-      ],
-      borderWidth: 1
-    }]
-  };
+  // Removed moodChartData as wellnessStats are no longer part of the data model
 
   const chartOptions = {
     responsive: true,
@@ -277,7 +250,6 @@ const Reports: React.FC = () => {
           variant="primary"
           icon={<Download size={16} />}
           onClick={exportReport}
-          // Disable button while loading or if no report data to export
           disabled={isLoading || !reportData || !reportData.glucoseStats || reportData.glucoseStats.readings.length === 0}
         >
           Export Report
@@ -308,7 +280,7 @@ const Reports: React.FC = () => {
       </Card>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Changed to col-3 since wellness is removed */}
         <Card className="bg-sky-50 dark:bg-sky-900/30 border border-sky-100 dark:border-sky-800">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Glucose</h3>
@@ -335,14 +307,15 @@ const Reports: React.FC = () => {
               : 'N/A'}%
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Target: 70-180 mg/dL
+            Target: {reportData?.glucoseStats.targetMin ?? '70'}-{reportData?.glucoseStats.targetMax ?? '180'} mg/dL
           </p>
         </Card>
 
         <Card className="bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Carbs</h3>
-            <Brain className="text-orange-600 dark:text-orange-400" size={20} />
+            {/* Removed Brain icon as it was associated with wellness */}
+            <FileText className="text-orange-600 dark:text-orange-400" size={20} /> {/* Using FileText as a generic icon */}
           </div>
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
             {reportData?.mealStats.averageCarbs !== undefined && reportData.mealStats.averageCarbs !== null
@@ -354,6 +327,8 @@ const Reports: React.FC = () => {
           </p>
         </Card>
 
+        {/* Insulin Usage Card - Moved to occupy the 4th spot if needed, or simply adjusted layout */}
+        {/* If you want this always visible, consider changing grid-cols-4 back or using a different layout */}
         <Card className="bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Insulin Usage</h3>
@@ -402,16 +377,7 @@ const Reports: React.FC = () => {
         >
           Meal Analysis
         </button>
-        <button
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'wellness'
-              ? 'border-b-2 border-sky-600 text-sky-600'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          onClick={() => setActiveTab('wellness')}
-        >
-          Wellness Metrics
-        </button>
+        {/* Removed Wellness Metrics Tab Button */}
       </div>
 
       {isLoading ? (
@@ -473,59 +439,7 @@ const Reports: React.FC = () => {
             </Card>
           )}
 
-          {activeTab === 'wellness' && (
-            <div className="space-y-4">
-              <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Mood Distribution
-                </h3>
-                <div className="h-64">
-                  {reportData?.wellnessStats.moodDistribution &&
-                    Object.keys(reportData.wellnessStats.moodDistribution).length > 0 ? (
-                    <Bar data={moodChartData} options={chartOptions} />
-                  ) : (
-                    <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                      No mood data available for the selected date range.
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Sleep Patterns
-                  </h3>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-sky-600 dark:text-sky-400">
-                      {reportData?.wellnessStats.averageSleep !== undefined && reportData.wellnessStats.averageSleep !== null
-                        ? reportData.wellnessStats.averageSleep.toFixed(1)
-                        : 'N/A'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Average hours of sleep
-                    </p>
-                  </div>
-                </Card>
-
-                <Card>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Stress Levels
-                  </h3>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                      {reportData?.wellnessStats.averageStress !== undefined && reportData.wellnessStats.averageStress !== null
-                        ? `${reportData.wellnessStats.averageStress.toFixed(1)}/10`
-                        : 'N/A'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Average stress level
-                    </p>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
+          {/* Removed Wellness Metrics conditional rendering block */}
         </>
       )}
     </div>
