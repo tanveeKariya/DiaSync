@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { BarChart3, Download, Calendar, Activity, FileText } from 'lucide-react'; // Removed Brain icon as it was associated with wellness
+import { BarChart3, Download, Calendar, Activity, FileText } from 'lucide-react';
 import { reportsApi } from '../services/api'; // Assuming you have reportsApi in api.ts
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -314,8 +314,7 @@ const Reports: React.FC = () => {
         <Card className="bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Carbs</h3>
-            {/* Removed Brain icon as it was associated with wellness */}
-            <FileText className="text-orange-600 dark:text-orange-400" size={20} /> {/* Using FileText as a generic icon */}
+            <FileText className="text-orange-600 dark:text-orange-400" size={20} />
           </div>
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
             {reportData?.mealStats.averageCarbs !== undefined && reportData.mealStats.averageCarbs !== null
@@ -327,8 +326,7 @@ const Reports: React.FC = () => {
           </p>
         </Card>
 
-        {/* Insulin Usage Card - Moved to occupy the 4th spot if needed, or simply adjusted layout */}
-        {/* If you want this always visible, consider changing grid-cols-4 back or using a different layout */}
+        {/* Insulin Usage Card - Placed here to fit the layout */}
         <Card className="bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Insulin Usage</h3>
