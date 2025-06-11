@@ -2,12 +2,9 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
-import { format, subDays } from 'date-fns'; // Import date-fns for data formatting
-import { verifyAuthToken } from '../middleware/authMiddleware.js'; // Adjust path as needed
-// Assuming you have specific service functions to fetch data
-import { getReadingsForUser } from '../services/glucoseService.js'; // Adjust path and function name
-import { getMealsForUser } from '../services/mealService.js';     // Adjust path and function name
-import { getDosesForUser } from '../services/insulinService.js';   // Adjust path and function name
+// Removed date-fns as it's not needed without date-specific data formatting
+// Removed verifyAuthToken as it's not needed if you don't need user context
+// Removed data service imports as they are no longer used
 
 dotenv.config();
 
@@ -22,72 +19,26 @@ if (!GEMINI_API_KEY) {
     // process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "YOUR_FALLBACK_API_KEY_IF_NEEDED"); // Use fallback or handle error
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "AIzaSyAf5d1ecihJMLnWeFwl8roOj9Fgj6MIc_k"); // Use fallback or handle error
 
-router.post('/', verifyAuthToken, async (req, res) => { // Apply authentication middleware
+// Removed verifyAuthToken middleware since we are removing personalization
+router.post('/', async (req, res) => {
     try {
         const { message } = req.body;
-        const userId = req.user.id; // User ID from the authenticated token
-        const user = req.user; // Full user object might contain target glucose range
 
         if (!message || typeof message !== 'string' || message.trim() === '') {
             return res.status(400).json({ error: 'A valid message is required.' });
         }
 
-        // 1. Fetch User-Specific Health Data
-        // Fetch a reasonable amount of recent data
-        const recentGlucoseReadings = await getReadingsForUser(userId, 50); // Fetch last 50 readings
-        const recentMeals = await getMealsForUser(userId, 20); // Fetch last 20 meals
-        const recentInsulinDoses = await getDosesForUser(userId, 20); // Fetch last 20 doses
+        // The prompt now only includes the user's message, without personalized health data.
+        let context = `The user is asking: "${message}". Please provide a helpful response. If the question is outside the scope of general knowledge or typical assistant capabilities, politely state that you cannot answer it.`;
 
-        // Sort data for better chronological context if not already sorted by your service
-        recentGlucoseReadings.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        recentMeals.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Latest first
-        recentInsulinDoses.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Latest first
-
-        // Prepare context for the AI
-        let context = `The user is asking a question related to their diabetes management. Their details:
-        Name: ${user.name}
-        Email: ${user.email}
-        Target Glucose Range: ${user.targetGlucoseRange?.min || '70'} - ${user.targetGlucoseRange?.max || '180'} mg/dL.
-        Current Date: ${format(new Date(), 'EEEE, MMMM d, yyyy h:mm:ss a')} // Using full timestamp
-
-        Here is the user's recent health data. Please analyze this data and use it to inform your answers, especially when asked about trends, averages, or specific recent events.
-
-        --- Recent Glucose Readings (last ${recentGlucoseReadings.length}, latest first): ---
-        ${recentGlucoseReadings.slice().reverse().map(r =>
-            `- ${format(new Date(r.timestamp), 'MMM d, h:mm a')}: ${r.value} mg/dL (${r.mealContext || 'N/A'})`
-        ).join('\n') || 'No recent glucose readings available.'}
-
-        --- Recent Meals (last ${recentMeals.length}, latest first): ---
-        ${recentMeals.map(m =>
-            `- ${format(new Date(m.timestamp), 'MMM d, h:mm a')}: ${m.mealType}, ${m.totalCarbs}g carbs`
-        ).join('\n') || 'No recent meal entries available.'}
-
-        --- Recent Insulin Doses (last ${recentInsulinDoses.length}, latest first): ---
-        ${recentInsulinDoses.map(d =>
-            `- ${format(new Date(d.timestamp), 'MMM d, h:mm a')}: ${d.units} units of ${d.insulinType}`
-        ).join('\n') || 'No recent insulin doses available.'}
-
-        --- User's Question: ---
-        ${message}
-
-        Based on the above context and the user's question, provide a helpful and empathetic response regarding their diabetes management. If the question is outside the scope of the provided data or general diabetes management, politely state that you cannot answer it. Do not hallucinate data that is not provided. Keep answers concise and direct.
-        `;
-
-        // // You might want to truncate the context if it gets too long for the model's token limit
-        // const MAX_CONTEXT_LENGTH = 16000;
-        // if (context.length > MAX_CONTEXT_LENGTH) {
-        //     context = context.substring(context.length - MAX_CONTEXT_LENGTH);
-        //     context = "..." + context;
-        // }
-
-        // --- ADD THIS CONSOLE.LOG ---
+        // --- Console log the prompt sent to Gemini ---
         console.log("---------------------------------------");
-        console.log("Prompt sent to Gemini:");
+        console.log("Prompt sent to Gemini (non-personalized):");
         console.log(context);
         console.log("---------------------------------------");
-        // --- END OF CONSOLE.LOG ---
+        // --- End of Console log ---
 
 
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -117,7 +68,7 @@ router.post('/', verifyAuthToken, async (req, res) => { // Apply authentication 
              return res.status(401).json({ error: 'AI service authentication failed. Please check your API key.' });
         }
 
-        res.status(500).json({ error: 'An unexpected error occurred with the AI service or data fetching.' });
+        res.status(500).json({ error: 'An unexpected error occurred with the AI service.' });
     }
 });
 
