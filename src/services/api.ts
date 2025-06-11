@@ -24,10 +24,7 @@ const api = axios.create({
   // *** CRITICAL CORRECTION HERE ***
   // Base URL should be ONLY the domain and port.
   // The '/api' prefix will be added in individual API service calls below (e.g., '/api/journal').
-  baseURL:
-    process.env.NODE_ENV === 'production'
-      ? 'https://diasync-ez2f.onrender.com' // Your deployed backend domain (without /api)
-      : 'http://localhost:5000', // Local development domain (without /api)
+  baseURL: 'https://diasync-ez2f.onrender.com',
   timeout: 15000, // Increased timeout slightly for potentially slower network or server responses
 });
 
