@@ -11,7 +11,7 @@ const Chatbot = () => {
     setMessages(prev => [...prev, { sender: 'You', text: input }]);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/chatbot', {
+      const response = await axios.post('https://diasync-ez2f.onrender.com/api/chatbot', {
         message: input,
       });
 

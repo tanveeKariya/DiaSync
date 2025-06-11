@@ -32,7 +32,7 @@ const ChatBot: React.FC = () => {
 
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/chatbot',
+        'https://diasync-ez2f.onrender.com/api/chatbot',
         { message: userMessage, userName: userName }, // Pass userName to the backend
         {
           headers: {
