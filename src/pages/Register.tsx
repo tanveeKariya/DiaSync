@@ -38,7 +38,8 @@ const Register: React.FC = () => {
     try {
       const { confirmPassword, ...userData } = data;
       await registerUser(userData);
-      navigate('/dashboard');
+      // Change this line to redirect to the login page
+      navigate('/login'); 
     } catch (error: any) {
       console.error('Registration error:', error);
       setErrorMessage(error.response?.data?.message || 'Failed to register. Please try again.');
@@ -128,6 +129,7 @@ const Register: React.FC = () => {
             className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 dark:text-white dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-sky-600 dark:focus:ring-sky-500 sm:text-sm sm:leading-6"
             {...register('diabetesType', { required: 'Diabetes type is required' })}
           >
+            <option value="">Select a type</option> {/* Added a default empty option */}
             <option value="Type 1">Type 1</option>
             <option value="Type 2">Type 2</option>
             <option value="Gestational">Gestational</option>
