@@ -55,7 +55,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 // --- Configure Axios Base URL ---
 // It's generally better to set this once in an axios config file
 // or directly here if this is your primary axios usage.
-axios.defaults.baseURL = 'https://diasync-ez2f.onrender.com/api'; // Ensure this matches your backend API prefix (e.g., /api)
+axios.defaults.baseURL = 'https://diasync-ez2f.onrender.com'; // Base URL without /api prefix
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true); // Start loading before API call
         try {
           axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          const res = await axios.get('/auth/me'); // Endpoint is /api/auth/me
+          const res = await axios.get('/api/auth/me'); // Endpoint is /api/auth/me
           const userData = res.data; // Backend sends the full user object directly
 
           // If dateOfDiagnosis is a Date object or string from backend,
@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const res = await axios.post('/auth/login', { email, password }); // Endpoint is /api/auth/login
+      const res = await axios.post('/api/auth/login', { email, password }); // Endpoint is /api/auth/login
       const receivedToken = res.data.token;
       const userData = res.data.user; // Backend sends the full user object
 
@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Register Payload:", userData);
 
-      const res = await axios.post('/auth/register', userData); // Endpoint is /api/auth/register
+      const res = await axios.post('/api/auth/register', userData); // Endpoint is /api/auth/register
       const receivedToken = res.data.token;
       const newUser = res.data.user; // Backend sends the full new user object
 
@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (userData: any) => {
     setIsLoading(true);
     try {
-      const res = await axios.put('/auth/profile', userData); // Endpoint is /api/auth/profile
+      const res = await axios.put('/api/auth/profile', userData); // Endpoint is /api/auth/profile
       const updatedUser = res.data.user; // Backend sends the updated full user object
 
       // Format date for frontend

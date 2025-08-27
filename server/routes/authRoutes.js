@@ -11,13 +11,17 @@ const router = express.Router();
 // Helper function to generate and send token
 const generateTokenAndSend = (user, res) => {
     const payload = { id: user.id };
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'diasyncsecret', { expiresIn: '7d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    res.cookie('token', token, {
+    // Set cookie for browser requests
+    if (res.cookie) {
+      res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+      });
+    }
 
     // Return user data (without password)
     const userData = { ...user.toObject() };
@@ -92,7 +96,7 @@ router.post('/login', [
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const { user: userData, token } = generateTokenAndSend(user, res);
@@ -131,7 +135,13 @@ router.get('/me', auth, async (req, res) => {
 
 // --- Logout user ---
 router.post('/logout', (req, res) => {
-    res.clearCookie('token');
+    if (res.clearCookie) {
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        });
+    }
     res.json({ message: 'Logout successful' });
 });
 

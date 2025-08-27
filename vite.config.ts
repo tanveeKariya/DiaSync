@@ -3,14 +3,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: '/', // usually '/' is recommended for Netlify
+  base: '/',
   server: {
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://diasync-ez2f.onrender.com', // replace with your backend URL
+        target: 'https://diasync-ez2f.onrender.com',
         changeOrigin: true,
-        secure: true, // backend is HTTPS, so secure should be true
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
     },
   },

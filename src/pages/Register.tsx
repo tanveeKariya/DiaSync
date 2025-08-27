@@ -38,11 +38,21 @@ const Register: React.FC = () => {
     try {
       const { confirmPassword, ...userData } = data;
       await registerUser(userData);
-      // Change this line to redirect to the login page
-      navigate('/login'); 
+      // Redirect to login with success message
+      navigate('/login', { 
+        state: { message: 'Registration successful! Please sign in with your credentials.' }
+      });
     } catch (error: any) {
       console.error('Registration error:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to register. Please try again.');
+      if (error.response?.status === 400) {
+        if (error.response.data?.message?.includes('already exists')) {
+          setErrorMessage('An account with this email already exists. Please use a different email or try logging in.');
+        } else {
+          setErrorMessage(error.response.data?.message || 'Invalid registration data. Please check your inputs.');
+        }
+      } else {
+        setErrorMessage(error.response?.data?.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

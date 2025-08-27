@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import ForgotPassword from './ForgotPassword';  
 
 interface LoginFormData {
   email: string;
@@ -16,8 +15,10 @@ interface LoginFormData {
 const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { 
     register, 
@@ -25,16 +26,30 @@ const Login: React.FC = () => {
     formState: { errors } 
   } = useForm<LoginFormData>();
 
+  // Check for success message from registration or password reset
+  React.useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+    }
+  }, [location.state]);
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setErrorMessage('');
+    setSuccessMessage('');
     
     try {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to login. Please check your credentials.');
+      if (error.response?.status === 400) {
+        setErrorMessage('Invalid email or password. Please check your credentials.');
+      } else if (error.response?.status === 401) {
+        setErrorMessage('Authentication failed. Please check your credentials.');
+      } else {
+        setErrorMessage(error.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +63,12 @@ const Login: React.FC = () => {
           Sign in to your DiaSync account
         </p>
       </div>
+
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 rounded-md text-sm">
+          {successMessage}
+        </div>
+      )}
 
       {errorMessage && (
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-md text-sm">
@@ -100,12 +121,12 @@ const Login: React.FC = () => {
               Remember me
             </label>
           </div>
-            <Link
-            to="/ForgotPassword"
+          <Link
+            to="/forgot-password"
             className="text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-            >
+          >
             Forgot password?
-            </Link>
+          </Link>
         </div>
 
         <Button
